@@ -1,0 +1,7 @@
+<container xmlns="http://symfony.com/schema/dic/services">
+    <services>
+        <service id="webuni_irc.manager" class="Webuni\IrcBundle\Service\IrcManager">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+    </services>
+</container>
