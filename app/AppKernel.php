@@ -14,7 +14,8 @@ class AppKernel extends Kernel
     public function __construct($environment, $debug)
     {
         parent::__construct($environment, $debug);
-        AnnotationRegistry::registerFile(__DIR__ . '/../vendor/doctrine/orm/lib/Doctrine/ORM/Mapping/Driver/DoctrineAnnotations.php');
+        $autoloaders= spl_autoload_functions();
+        AnnotationRegistry::registerLoader(reset($autoloaders));
     }
 
     public function registerBundles()

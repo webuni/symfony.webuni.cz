@@ -1,6 +1,7 @@
 <?php
 namespace Webuni\IrcBundle\Command;
 
+use Doctrine\ORM\EntityManager;
 use Phergie\Irc\Client\React\Client;
 use Phergie\Irc\Connection;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -43,6 +44,10 @@ class IrcBotCommand extends ContainerAwareCommand
         $connection->setRealname($input->getOption('realname') ?: $this->nick);
 
         $this->manager = $this->getContainer()->get('webuni_irc.manager');
+
+        if (($om = $this->manager->getObjectManager()) instanceof EntityManager) {
+            $om->getConnection()->getConfiguration()->setSQLLogger(null);
+        }
 
         foreach ($input->getOption('channel') as $channel) {
             $key = 0 === strpos(trim($channel), '#') ? trim($channel) : '#'.trim($channel);

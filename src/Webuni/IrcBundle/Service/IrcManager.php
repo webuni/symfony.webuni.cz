@@ -28,11 +28,17 @@ class IrcManager
         return $channel;
     }
 
+    public function getObjectManager()
+    {
+        return $this->om;
+    }
+
     public function log(Channel $channel, $nick, $command, $message, $time = null)
     {
         $log = new $this->logClass($nick, $command, $message, $time, $channel);
 
         $this->om->persist($log);
-        $this->om->flush();
+        $this->om->flush($log);
+        $this->om->clear($this->logClass);
     }
 }
