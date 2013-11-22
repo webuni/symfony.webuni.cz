@@ -46,8 +46,18 @@ class Log
     {
         $this->nick = $nick;
         $this->command = $command;
-        $this->text = $text;
         $this->datetime = null ?: new \DateTime();
         $this->channel = $channel;
+        $this->setText($text);
+    }
+
+    public function setText($text)
+    {
+        $encoding = mb_detect_encoding($text, 'UTF-8,ISO-8859-1,ISO-8859-2', true) ?: 'ISO-8859-1';
+        if ('UTF-8' !== $encoding) {
+            $text = mb_convert_encoding($text, 'UTF-8', $encoding);
+        }
+
+        $this->text = $text;
     }
 }

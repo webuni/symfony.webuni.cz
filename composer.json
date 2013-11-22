@@ -3,6 +3,9 @@
     "description": "Web Symfony Česká republika",
 
     "require": {
+        "php": ">=5.3.3",
+        "ext-mbstring": "*",
+
         "symfony/framework-bundle": "~2.3",
         "symfony/console": "~2.3",
         "symfony/yaml": "~2.3",
