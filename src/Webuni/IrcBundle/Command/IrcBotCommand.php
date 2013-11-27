@@ -4,6 +4,7 @@ namespace Webuni\IrcBundle\Command;
 use Doctrine\ORM\EntityManager;
 use Phergie\Irc\Client\React\Client;
 use Phergie\Irc\Connection;
+use React\EventLoop\Timer\TimerInterface;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,6 +13,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class IrcBotCommand extends ContainerAwareCommand
 {
+    private $writer;
     private $manager;
     private $nick;
     private $channels = array();
@@ -27,6 +29,7 @@ class IrcBotCommand extends ContainerAwareCommand
             ->addOption('username', 'u', InputOption::VALUE_OPTIONAL, 'The user\'s username')
             ->addOption('realname', 'r', InputOption::VALUE_OPTIONAL, 'The user\'s realname')
             ->addOption('port', 'p', InputOption::VALUE_OPTIONAL, 'The port on which the server is running', 6667)
+            ->addOption('pingtime', 'pt', InputOption::VALUE_OPTIONAL, 'The time interval in seconds between ping commands', 120)
             ->addOption('channel', 'c', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'The channels the bot should join')
         ;
     }
@@ -58,7 +61,8 @@ class IrcBotCommand extends ContainerAwareCommand
         $client->on('irc.received', array($this, 'joinListener'));
         $client->on('irc.received', array($this, 'pongListener'));
         $client->on('irc.received', array($this, 'namesListener'));
-        $client->on('irc.received', array($this, 'logMessage'));
+        $client->on('irc.received', array($this, 'messageListener'));
+        $client->addPeriodicTimer($input->getOption('pingtime'), array($this, 'pingTimer'));
         $client->run($connection);
     }
 
@@ -67,6 +71,7 @@ class IrcBotCommand extends ContainerAwareCommand
         switch ($message['command']) {
             case 376: // RPL_ENDOFMOTD
             case 422: // ERR_NOMOTD
+                $this->writer = $write;
                 $write->ircJoin(implode(',', array_keys($this->channels)));
                 break;
         }
@@ -76,6 +81,13 @@ class IrcBotCommand extends ContainerAwareCommand
     {
         if ('PING' == $message['command']) {
             $write->ircPong($message['params']['server1'], isset($message['params']['server2']) ? $message['params']['server2'] : null);
+        }
+    }
+
+    public function pingTimer()
+    {
+        if ($this->writer) {
+            $this->writer->ircPing('');
         }
     }
 
@@ -110,7 +122,7 @@ class IrcBotCommand extends ContainerAwareCommand
         }
     }
 
-    public function logMessage($message)
+    public function messageListener($message)
     {
         if (in_array($command = $message['command'], array('JOIN', 'PRIVMSG', 'PART', 'QUIT'))) {
             $nick = $message['nick'];
